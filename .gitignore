@@ -3,3 +3,4 @@ verf/constrained_random/CMakeLists.txt
 verf/constrained_random/readme.txt
 verf/tb_dir/__pycache__
 verf/tb_dir/sim_build
+verf/constrained_random/filelist.f
