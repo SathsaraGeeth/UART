@@ -132,8 +132,8 @@ Example:
         - Max Clock Speed:          212 MHz
 
 2. **Simulation**
-   - cocotb + Verilator based testbench included
+   - cocotb based testbench is included in verf/tb_dir
    - May be useful during development and refactoring
 
 3. **Verification**
-   - UVM-based constrained random verification can be found in verf/contrained_random
+   - UVM-based constrained random verification can be found in verf/constrained_random
