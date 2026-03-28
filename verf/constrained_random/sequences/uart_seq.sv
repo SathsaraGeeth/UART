@@ -14,7 +14,7 @@ class uart_seq extends uvm_sequence #(uart_txn);
         uart_tx_txn  tx;
 
         integer i;
-        for (i = 0; i < 100; i++) begin
+        for (i = 0; i < 1000; i++) begin
             if ($urandom_range(0, 99) < 100) begin      /* ignore rst for a while */
                 tx = uart_tx_txn::type_id::create("tx");
                 assert(tx.randomize()) else

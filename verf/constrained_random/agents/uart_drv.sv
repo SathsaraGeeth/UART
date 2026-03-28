@@ -17,6 +17,7 @@ class uart_drv extends uvm_driver #(uart_txn);
     endfunction
 
     task run_phase(uvm_phase phase);
+        repeat (100) @(posedge vif.clk);
         fork
             forever begin
                 handle_tx();
@@ -29,9 +30,7 @@ class uart_drv extends uvm_driver #(uart_txn);
         uart_txn txn;
         uart_rst_txn rst_t;
         uart_tx_txn  tx_t;
-
-        repeat (100) @(posedge vif.clk);
-
+        
         forever begin
             seq_item_port.get_next_item(txn);
 
@@ -62,12 +61,11 @@ class uart_drv extends uvm_driver #(uart_txn);
         forever begin
             @(posedge vif.clk);
             if (vif.deq_rx_ready) begin
-                $display("[DRV] RX data: %0x", vif.deq_rx_data);
                 vif.deq_rx_valid <= 1;
                 @(posedge vif.clk);
                 vif.deq_rx_valid <= 0;
-                return ;
             end
+            return ;
         end
     endtask
 
