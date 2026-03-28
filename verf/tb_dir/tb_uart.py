@@ -40,7 +40,10 @@ async def reset(dut, cycles=2):
         for _ in range(cycles):
             await RisingEdge(dut.i_clk)
         dut.i_rst_n.value = 1
-        dut.i_baud_div.value = 512
+        dut.i_baud_div.value = 16
+        dut.i_deq_rx_valid.value = 0
+        dut.i_enq_tx_data.value = 0
+        dut.i_enq_tx_valid.value = 0
         await RisingEdge(dut.i_clk)
 
 async def cycle(dut, cycle_ctr):
@@ -144,6 +147,11 @@ async def test(dut):
 
 
     await enq_tx(dut, 0b11001011)
+    await enq_tx(dut, 0b11011011)
+    await enq_tx(dut, 0b11011011)
+    await enq_tx(dut, 0b11001011)
+    await enq_tx(dut, 0b11001011)
+
     
     while (cycles < 10000):
         #  TX test ON
@@ -164,16 +172,16 @@ async def test(dut):
         await cycle(dut, cycles)
         cycles += 1
     
-    # print(dut.rx_buffer.mem_buff.value)
-    # print(dut.tx_buffer.mem_buff.value)
+    print(dut.rx_buffer.mem_buff.value)
+    print(dut.tx_buffer.mem_buff.value)
 
 
 
 
 
 def run():
-    sim = os.getenv("SIM", "verilator")
-    project_dir = Path(__file__).parent.parent.parent/"rtl"
+    sim = os.getenv("SIM", "dsim")
+    project_dir = Path(__file__).parent.parent.parent/"rtl"/"core"
     sources = [
         project_dir / "uart.sv"
     ]
