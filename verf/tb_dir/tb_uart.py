@@ -185,7 +185,7 @@ async def test(dut):
 
 
 def run():
-    sim = os.getenv("SIM", "dsim")
+    sim = os.getenv("SIM", "verilator")
     project_dir = Path(__file__).parent.parent.parent/"rtl"/"core"
     sources = [
         project_dir / "uart.sv"
