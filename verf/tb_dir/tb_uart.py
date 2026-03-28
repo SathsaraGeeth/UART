@@ -153,7 +153,7 @@ async def test(dut):
     await enq_tx(dut, 0b11001011)
 
     
-    while (cycles < 10000):
+    while (cycles < 1000):
         #  TX test ON
         #  probe_tx_state(dut)
         #  print("#########")
@@ -168,6 +168,11 @@ async def test(dut):
         probe_tx_state(dut)
         # loopback test OFF
 
+        if (dut.o_deq_rx_ready.value):
+            print(f"Received RX data: {int(dut.o_deq_rx_data.value):08b}")
+            dut.i_deq_rx_valid.value = 1
+            await RisingEdge(dut.i_clk)
+            dut.i_deq_rx_valid.value = 0
 
         await cycle(dut, cycles)
         cycles += 1
