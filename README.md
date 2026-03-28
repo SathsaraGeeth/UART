@@ -136,4 +136,4 @@ Example:
    - May be useful during development and refactoring
 
 3. **Verification**
-   - UVM-based constrained random verification not included in this repository
+   - UVM-based constrained random verification can be found in verf/contrained_random
