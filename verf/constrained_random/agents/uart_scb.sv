@@ -4,132 +4,105 @@ import uvm_pkg::*;
 class uart_scb extends uvm_scoreboard;
     `uvm_component_utils(uart_scb)
 
-    // Separate FIFOs
-    uart_tx_txn tx_fifo[$];
-    uart_rx_txn rx_fifo[$];
-    uart_rst_txn rst_fifo[$]; // placeholder only
+    uvm_analysis_export #(uart_txn) before_export;
+    uvm_tlm_analysis_fifo #(uart_txn) before_fifo;
 
-    uvm_analysis_export #(uart_txn) mon_export;
-    uvm_tlm_analysis_fifo #(uart_txn) mon_fifo;
+    uvm_analysis_export #(uart_txn) after_export;
+    uvm_tlm_analysis_fifo #(uart_txn) after_fifo;
 
-    uvm_analysis_export #(uart_txn) drv_export;
-    uvm_tlm_analysis_fifo #(uart_txn) drv_fifo;
+    uart_tx_txn before_list[$];
 
     function new(string name="uart_scb", uvm_component parent=null);
-        super.new(name, parent);
+        super.new(name,parent);
     endfunction
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        mon_export = new("mon_export", this);
-        mon_fifo   = new("mon_fifo", this);
-        drv_export = new("drv_export", this);
-        drv_fifo   = new("drv_fifo", this);
+        before_export = new("before_export", this);
+        after_export  = new("after_export",  this);
+        before_fifo   = new("before_fifo", this);
+        after_fifo    = new("after_fifo",  this);
     endfunction
 
     function void connect_phase(uvm_phase phase);
-        mon_export.connect(mon_fifo.analysis_export);
-        drv_export.connect(drv_fifo.analysis_export);
+        before_export.connect(before_fifo.analysis_export);
+        after_export.connect(after_fifo.analysis_export);
     endfunction
 
     task run_phase(uvm_phase phase);
         fork
-            listen_driver();
-            listen_monitor();
+            consume_before();
+            compare();
         join_none
     endtask
 
-    // -------------------------------------------------------------
-    task listen_driver();
+    // Log every BEFORE transaction
+    task consume_before();
         uart_txn txn;
         uart_tx_txn tx_t;
         uart_rx_txn rx_t;
         uart_rst_txn rst_t;
 
         forever begin
-            drv_fifo.get(txn);
+            before_fifo.get(txn);
 
-            if (txn.m_type == UART_MON_TX) begin
-                if ($cast(tx_t, txn)) begin
-                    tx_fifo.push_back(tx_t);
-                end
+            if ($cast(tx_t, txn)) begin
+                before_list.push_back(tx_t);
+                `uvm_info("SCB_BEFORE", $sformatf("Type: TX, seq=%0d, data=0x%0h", tx_t.seq_number, tx_t.data), UVM_LOW)
             end
-
-            else if (txn.m_type == UART_MON_RX) begin
-                if ($cast(rx_t, txn)) begin
-                    rx_fifo.push_back(rx_t);
-                end
+            else if ($cast(rx_t, txn)) begin
+                `uvm_info("SCB_BEFORE", $sformatf("Type: RX, seq=%0d, data=0x%0h", rx_t.seq_number, rx_t.data), UVM_LOW)
             end
-
-            else if (txn.m_type == UART_MON_RST) begin
-                if ($cast(rst_t, txn)) begin
-                    rst_fifo.push_back(rst_t); // placeholder
-                end
+            else if ($cast(rst_t, txn)) begin
+                `uvm_info("SCB_BEFORE", "Type: RESET", UVM_LOW)
+            end
+            else begin
+                `uvm_info("SCB_BEFORE", $sformatf("Unknown type: %s", txn.get_type_name()), UVM_LOW)
             end
         end
     endtask
 
-    // -------------------------------------------------------------
-    task listen_monitor();
+    // Compare AFTER transactions against BEFORE list
+    task compare();
         uart_txn txn;
-        uart_tx_txn tx_got, tx_exp;
-        uart_rx_txn rx_got, rx_exp;
+        uart_rst_txn rst_t;
+        uart_rx_txn  rx_t;
+        uart_tx_txn  tx_t;
+        bit matched;
+        int i;
 
         forever begin
-            mon_fifo.get(txn);
+            after_fifo.get(txn);
 
-            // ---------------- TX ----------------
-            if (txn.m_type == UART_MON_TX) begin
-                if (tx_fifo.size() == 0) begin
-                    `uvm_error("UART_SCB", "Unexpected TX received, FIFO empty");
-                end
-                else begin
-                    tx_exp = tx_fifo.pop_front();
+            if ($cast(rst_t, txn)) begin
+                `uvm_info("SCB_AFTER", "Type: RESET", UVM_LOW)
+            end
+            else if ($cast(rx_t, txn)) begin
+                `uvm_info("SCB_AFTER", $sformatf("Type: RX, seq=%0d, data=0x%0h", rx_t.seq_number, rx_t.data), UVM_LOW)
+                matched = 0;
 
-                    if ($cast(tx_got, txn)) begin
-                        if (tx_exp.data !== tx_got.data) begin
-                            `uvm_error("UART_SCB",
-                                $sformatf("TX mismatch! exp=0x%0h got=0x%0h",
-                                tx_exp.data, tx_got.data));
-                        end
-                        else begin
-                            `uvm_info("UART_SCB",
-                                $sformatf("TX match: 0x%0h", tx_got.data),
-                                UVM_LOW);
-                        end
+                for (i = 0; i < before_list.size(); i++) begin
+                    tx_t = before_list[i];
+                    if (tx_t.seq_number == rx_t.seq_number) begin
+                        matched = 1;
+                        if (tx_t.data == rx_t.data)
+                            `uvm_info("UART_SCB", $sformatf("TX[%0d] matches RX[%0d]=0x%0h", tx_t.seq_number, rx_t.seq_number, rx_t.data), UVM_LOW)
+                        else
+                            `uvm_error("UART_SCB", $sformatf("Mismatch TX[%0d]=0x%0h vs RX[%0d]=0x%0h", tx_t.seq_number, tx_t.data, rx_t.seq_number, rx_t.data));
+                        before_list.delete(i);
+                        break;
                     end
                 end
+
+                if (!matched)
+                    `uvm_info("UART_SCB", $sformatf("RX[%0d]=0x%0h unmatched", rx_t.seq_number, rx_t.data), UVM_LOW)
             end
-
-            // ---------------- RX ----------------
-            else if (txn.m_type == UART_MON_RX) begin
-                if (rx_fifo.size() == 0) begin
-                    `uvm_error("UART_SCB", "Unexpected RX received, FIFO empty");
-                end
-                else begin
-                    rx_exp = rx_fifo.pop_front();
-
-                    if ($cast(rx_got, txn)) begin
-                        if (rx_exp.data !== rx_got.data) begin
-                            `uvm_error("UART_SCB",
-                                $sformatf("RX mismatch! exp=0x%0h got=0x%0h",
-                                rx_exp.data, rx_got.data));
-                        end
-                        else begin
-                            `uvm_info("UART_SCB",
-                                $sformatf("RX match: 0x%0h", rx_got.data),
-                                UVM_LOW);
-                        end
-                    end
-                end
+            else if ($cast(tx_t, txn)) begin
+                `uvm_info("SCB_AFTER", $sformatf("Type: TX, seq=%0d, data=0x%0h", tx_t.seq_number, tx_t.data), UVM_LOW)
             end
-
-            // ---------------- RST ----------------
-            else if (txn.m_type == UART_MON_RST) begin
-                // intentionally ignored for comparison
-                // optional: track or clear queues if you want later
+            else begin
+                `uvm_info("SCB_AFTER", $sformatf("Unknown type: %s", txn.get_type_name()), UVM_LOW)
             end
-
         end
     endtask
 
