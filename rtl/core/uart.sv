@@ -501,7 +501,6 @@ module uart #(
         .o_level(o_rx_level)
     );
     // RX - Reciever
-    
 endmodule: uart // universal asyncronous reciever and transmitter
 
 
