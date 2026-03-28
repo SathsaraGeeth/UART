@@ -51,16 +51,15 @@ module uart_tb_top;
     initial begin
         vif.clk     = 1'b0;
         vif.rst_n   = 1'b0;
-        vif.rx      = 1'b1;
 
         vif.enq_tx_valid = 1'b0;
         vif.enq_tx_data  = 8'd0;
-        vif.deq_rx_valid = 1'b0;
+        vif.deq_rx_valid <= 1'b0;
         vif.baud_div = 32'd16;
 
 
         repeat (5) @(posedge vif.clk);
-        vif.rst_n = 1'b1; // release reset
+        vif.rst_n = 1'b1;
 
         
         $dumpfile("uart_tb.vcd");
@@ -71,6 +70,8 @@ module uart_tb_top;
         #10 vif.clk = ~vif.clk;
     end
 
-    assign vif.rx = vif.tx;
+    always_ff @(posedge vif.clk) begin
+        vif.rx <= vif.tx;
+    end
 
 endmodule: uart_tb_top
