@@ -245,7 +245,7 @@ module uart #(
                     w_load_txshftr  = 1'b0;
                     w_en_txshftr    = 1'b0;
                     s_tx_next       = TX_IDLE;
-                    $warning("Illegal TX state!");
+                    $error("Illegal TX state!");
             end
         endcase
     end
@@ -279,18 +279,18 @@ module uart #(
     logic           w_p_rx_data_valid;
 
 
-    logic   w_s_rx_data_valid_pulse;
-    level2pulse l2p_1(
-        .i_clk(i_clk),
-        .i_rst_n(i_rst_n),
-        .i_level(w_s_rx_data_valid),
-        .o_pulse(w_s_rx_data_valid_pulse)
-    );
+    // logic   w_s_rx_data_valid_pulse;
+    // level2pulse l2p_1(
+    //     .i_clk(i_clk),
+    //     .i_rst_n(i_rst_n),
+    //     .i_level(w_s_rx_data_valid),
+    //     .o_pulse(w_s_rx_data_valid_pulse)
+    // );
 
     s2p_shift_reg #(.WIDTH(8)) r_rx_shft_reg (
         .i_clk(i_clk),
         .i_rst_n(i_rst_n),
-        .i_en(w_s_rx_data_valid_pulse),
+        .i_en(w_s_rx_data_valid/*w_s_rx_data_valid_pulse*/),
         .i_s_data(w_s_rx_data),
         .o_p_data(w_p_rx_data)
     );
@@ -475,13 +475,13 @@ module uart #(
         end
     end
 
-    logic   w_p_rx_data_valid_pulse;
-    level2pulse l2p_2(
-        .i_clk(i_clk),
-        .i_rst_n(i_rst_n),
-        .i_level(w_p_rx_data_valid),
-        .o_pulse(w_p_rx_data_valid_pulse)
-    );
+    // logic   w_p_rx_data_valid_pulse;
+    // level2pulse l2p_2(
+    //     .i_clk(i_clk),
+    //     .i_rst_n(i_rst_n),
+    //     .i_level(w_p_rx_data_valid),
+    //     .o_pulse(w_p_rx_data_valid_pulse)
+    // );
 
     cicular_buffer #(.DEPTH(RX_DEPTH), .WIDTH(8))
         rx_buffer   (
@@ -493,7 +493,7 @@ module uart #(
         .i_deq_valid(i_deq_rx_valid),
 
         .i_enq_tail_data(w_p_rx_data),
-        .i_enq_valid(w_p_rx_data_valid_pulse),
+        .i_enq_valid(w_p_rx_data_valid/*w_p_rx_data_valid_pulse*/),
         .o_enq_ready(),                         // [7] drops if can't accept
 
         .o_full(o_rx_full),
@@ -501,10 +501,6 @@ module uart #(
         .o_level(o_rx_level)
     );
     // RX - Reciever
-
-    always_ff @(posedge i_clk) begin
-        $display("rx level, %d rx, %d state, %d", o_rx_level, i_rx, s_rx_state);
-    end
     
 endmodule: uart // universal asyncronous reciever and transmitter
 
@@ -544,7 +540,7 @@ module cicular_buffer #(
         o_head_data         = mem_buff[r_head_ptr];
     end
 
-    always_ff @(posedge i_clk/* or negedge i_rst_n*/) begin
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             r_head_ptr  <= '0;
             r_tail_ptr  <= '0;
