@@ -12,9 +12,17 @@ interface uart_if #(
     logic                           deq_rx_ready;
     logic                           deq_rx_valid;
 
+    logic                           rx_full,
+    logic                           rx_empty,
+    logic [$clog2(RX_DEPTH+1)-1:0]  rx_level,
+
     logic  [7:0]                    enq_tx_data;
     logic                           enq_tx_valid;
     logic                           enq_tx_ready;
+
+    logic                           tx_full,
+    logic                           tx_empty,
+    logic [$clog2(TX_DEPTH+1)-1:0]  tx_level,
 
     logic                           rx;
     logic                           tx;
