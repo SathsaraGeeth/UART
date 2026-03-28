@@ -5,11 +5,14 @@ class uart_mon extends uvm_monitor;
     `uvm_component_utils(uart_mon)
 
     virtual uart_if vif;
-    uvm_analysis_port #(uart_txn) ap;
+    uvm_analysis_port #(uart_txn) before_ap;
+    uvm_analysis_port #(uart_txn) after_ap;
+
 
     function new(string name = "uart_mon", uvm_component parent);
         super.new(name, parent);
-        ap = new("ap", this);
+        before_ap = new("before_ap", this);
+        after_ap  = new("after_ap", this);
     endfunction
 
     function void build_phase(uvm_phase phase);
@@ -21,59 +24,52 @@ class uart_mon extends uvm_monitor;
 
     task run_phase(uvm_phase phase);
         fork
-            monitor_rx_parallel();
-            monitor_tx_serial();
+            monitor_rst();
+            monitor_rx();
+            monitor_tx();
         join_none
     endtask
 
-    task monitor_rx_parallel();
+    task monitor_rst();
         uart_rst_txn rst;
-        uart_rx_txn rx_t;
-
+        bit reset_sent;
         forever begin
             @(posedge vif.clk);
-
-            if (!vif.rst_n) begin
+            if (!vif.rst_n && !reset_sent) begin
                 rst = uart_rst_txn::type_id::create("rst_txn");
-                rst.m_type = UART_MON_RST;
-                ap.write(rst);
+                after_ap.write(rst);
+                reset_sent = 1;
             end
+            if (vif.rst_n)
+                reset_sent = 0;
+        end
+    endtask
 
-            else if (vif.deq_rx_ready) begin
-                vif.deq_rx_valid <= 1;
-
-                @(posedge vif.clk);
+    task monitor_rx();
+        uart_rx_txn rx_t;
+        int unsigned seq_id = 0;
+        forever begin
+            @(posedge vif.clk);
+            if (vif.deq_rx_valid && vif.deq_rx_ready) begin
                 rx_t = uart_rx_txn::type_id::create("rx_txn");
-                rx_t.m_type = UART_MON_RX;
                 rx_t.data   = vif.deq_rx_data;
-                ap.write(rx_t);
-
-                vif.deq_rx_valid <= 0;
+                rx_t.seq_number = seq_id++;
+                after_ap.write(rx_t);
             end
         end
     endtask
 
-    task monitor_tx_serial();
+    task monitor_tx();
         uart_tx_txn tx_t;
-        bit [7:0] data;
-
+        int unsigned seq_id = 0;
         forever begin
-            @(negedge vif.tx);               // detect start bit
-            data = 8'b0;
-            // wait until middle of start bit
-            repeat (vif.baud_div/2) @(posedge vif.clk);
-            // sample 8 data bits
-            for (int i = 0; i < 8; i++) begin
-                repeat (vif.baud_div) @(posedge vif.clk);
-                data[i] = vif.tx;
+            @(posedge vif.clk);
+            if (vif.enq_tx_valid && vif.enq_tx_ready) begin
+                tx_t = uart_tx_txn::type_id::create("tx_txn");
+                tx_t.data = vif.enq_tx_data;
+                tx_t.seq_number = seq_id++;
+                before_ap.write(tx_t);
             end
-            // wait for stop bit
-            repeat (vif.baud_div) @(posedge vif.clk);
-            // send to scoreboard
-            tx_t = uart_tx_txn::type_id::create("tx_txn");
-            tx_t.m_type = UART_MON_TX;
-            tx_t.data   = data;
-            ap.write(tx_t);
         end
     endtask
 endclass
