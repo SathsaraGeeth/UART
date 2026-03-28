@@ -11,19 +11,11 @@ class uart_txn extends uvm_sequence_item;
 endclass: uart_txn
 
 class uart_rst_txn extends uart_txn;
-  bit [31:0] baud_div;
-//   rand bit [31:0] baud_div;
-//   constraint c_baud_div {
-//     baud_div inside {[1:10000000]};
-//   }
-
   `uvm_object_utils_begin(uart_rst_txn)
-    `uvm_field_int(baud_div, UVM_ALL_ON)
   `uvm_object_utils_end
 
   function new(string name = "uart_rst_txn");
     super.new(name);
-    baud_div = 16; // fixed baud_div
   endfunction
 endclass: uart_rst_txn
 

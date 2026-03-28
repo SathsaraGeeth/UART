@@ -55,7 +55,7 @@ module uart_tb_top;
         vif.enq_tx_valid = 1'b0;
         vif.enq_tx_data  = 8'd0;
         vif.deq_rx_valid <= 1'b0;
-        vif.baud_div = 32'd16;
+        vif.baud_div     = 32'd16;
 
 
         repeat (5) @(posedge vif.clk);

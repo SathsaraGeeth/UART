@@ -38,8 +38,7 @@ class uart_drv extends uvm_driver #(uart_txn);
                 vif.rst_n <= 0;
                 repeat (2) @(posedge vif.clk);
                 vif.rst_n <= 1;
-                vif.baud_div <= rst_t.baud_div;
-                repeat (2) @(posedge vif.clk);
+                repeat (100) @(posedge vif.clk);
             end
             else if ($cast(tx_t, txn)) begin
                 // wait for DUT ready
