@@ -5,7 +5,6 @@ import uvm_pkg::*;
 // import our pkg and macros
 
 module uart_tb_top;
-
     // interface instance
     uart_if vif();
 
@@ -27,18 +26,17 @@ module uart_tb_top;
         .o_deq_rx_ready(vif.deq_rx_ready),
         .i_deq_rx_valid(vif.deq_rx_valid),
 
-        .o_rx_full(),
-        .o_rx_empty(),
-        .o_rx_level(),
+        .o_rx_full(vif.rx_full),
+        .o_rx_empty(vif.rx_empty),
+        .o_rx_level(vif.rx_level),
 
         .i_enq_tx_data(vif.enq_tx_data),
         .i_enq_tx_valid(vif.enq_tx_valid),
         .o_enq_tx_ready(vif.enq_tx_ready),
 
-        .o_tx_full(),
-        .o_tx_empty(),
-        .o_tx_level(),
-
+        .o_tx_full(vif.tx_full),
+        .o_tx_empty(vif.tx_empty),
+        .o_tx_level(vif.tx_level),
 
         .i_rx(vif.rx),
         .o_tx(vif.tx)
@@ -50,28 +48,29 @@ module uart_tb_top;
         run_test();
     end
 
-    // Clock initialization
     initial begin
-        // to prevent x propogation in sim
-        vif.rst_n        = 1'b0;     // start in reset
-        vif.rx           = 1'b1;     // idle high for UART
-        vif.baud_div     = 32'd868;  // example baud divider
-        vif.enq_tx_data  = 8'd0;
+        vif.clk     = 1'b0;
+        vif.rst_n   = 1'b0;
+        vif.rx      = 1'b1;
+
         vif.enq_tx_valid = 1'b0;
+        vif.enq_tx_data  = 8'd0;
         vif.deq_rx_valid = 1'b0;
-        vif.clk = 1'b0;
+        vif.baud_div = 32'd16;
+
 
         repeat (5) @(posedge vif.clk);
-        vif.rst_n = 1'b1;  // release reset
+        vif.rst_n = 1'b1; // release reset
 
-        // waveform
+        
         $dumpfile("uart_tb.vcd");
         $dumpvars(0, uart_tb_top);
     end
 
-    // Clock generator
     always begin
         #10 vif.clk = ~vif.clk;
     end
+
+    assign vif.rx = vif.tx;
 
 endmodule: uart_tb_top
