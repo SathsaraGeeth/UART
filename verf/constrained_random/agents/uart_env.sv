@@ -4,7 +4,7 @@ import uvm_pkg::*;
 class uart_env extends uvm_env;
     `uvm_component_utils(uart_env)
 
-    uart_agent u_agent;
+    uart_agent  u_agent;
     uart_scb    u_scb;
 
     function new(string name="uart_env", uvm_component parent=null);
@@ -14,13 +14,13 @@ class uart_env extends uvm_env;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        u_agent = uart_agent::type_id::create("u_agent", this, UVM_PASSIVE);
+        u_agent = uart_agent::type_id::create("u_agent", this);
         u_scb   = uart_scb   ::type_id::create("u_scb",   this);
     endfunction
 
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
-        u_agent.ap.connect(u_scb.mon_export);
-        u_agent.drv_ap.connect(u_scb.drv_export);
+        u_agent.before_ap.connect(u_scb.before_export);
+        u_agent.after_ap.connect(u_scb.after_export);
     endfunction
 endclass
