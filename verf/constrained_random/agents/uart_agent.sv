@@ -8,13 +8,13 @@ class uart_agent extends uvm_agent;
     uart_drv  drv;
     uart_mon  mon;
 
-    uvm_analysis_port #(uart_txn) ap;
-    uvm_analysis_port #(uart_txn) drv_ap;
+    uvm_analysis_port #(uart_txn) before_ap;
+    uvm_analysis_port #(uart_txn) after_ap;
 
     function new(string name="uart_agent", uvm_component parent=null);
         super.new(name,parent);
-        ap = new("ap", this);
-        drv_ap = new("drv_ap", this);
+        before_ap = new("before_ap", this);
+        after_ap = new("after_ap", this);
     endfunction
 
     function void build_phase(uvm_phase phase);
@@ -29,7 +29,7 @@ class uart_agent extends uvm_agent;
         super.connect_phase(phase);
 
         drv.seq_item_port.connect(seqr.seq_item_export);
-        mon.ap.connect(ap);
-        drv.drv_ap.connect(drv_ap);
+        mon.before_ap.connect(before_ap);
+        mon.after_ap.connect(after_ap);
     endfunction
 endclass
