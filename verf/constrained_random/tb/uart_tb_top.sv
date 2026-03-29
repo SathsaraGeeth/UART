@@ -77,7 +77,7 @@ module uart_tb_top;
 
 
         repeat (5) @(posedge vif.clk);
-        vif.rst_n = 1
+        vif.rst_n = 1;
 
         
         $dumpfile("uart_tb.vcd");

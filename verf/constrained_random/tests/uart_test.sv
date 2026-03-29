@@ -28,6 +28,7 @@ class uart_test extends uvm_test; // uvm_components <- uvm_test
     `uvm_component_utils(uart_test)
 
     uart_env u_env;
+    uart_cov coverage_sub; // converage subscriber
 
     // constructor
     function new(string name="uart_test", uvm_component parent=null);
@@ -42,12 +43,29 @@ class uart_test extends uvm_test; // uvm_components <- uvm_test
     // uvm calls run_phase after it creates our object
     task run_phase(uvm_phase phase);
         uart_seq seq;
+        real cov;   // coverage
 
         // uvm objects can raises an objection finishing the test - test run as long as one object has an objection to stop it
         phase.raise_objection(this);    // pass ourselves using this
 
         seq = uart_seq::type_id::create("seq");
         seq.start(u_env.u_agent.seqr);
+
+
+        forever begin
+            #1ns;
+            
+            cov = coverage_sub.tx_cg.get_coverage() + coverage_sub.rx_cg.get_coverage() + coverage_sub.rst_cg.get_coverage();
+            cov = cov / 3.0;
+
+            `uvm_info("COV", $sformatf("Coverage: %.2f%%", cov), UVM_LOW)
+            
+            if(cov >= 80.0) begin
+                `uvm_info("COV", "Target coverage reached (80%)", UVM_LOW)
+                break;
+            end
+        end
+
 
         phase.drop_objection(this); 
     endtask
