@@ -133,7 +133,7 @@ module uart #(
         .o_pulse(w_load_txshftr_pulse)
     );
 
-    cicular_buffer #(.DEPTH(TX_DEPTH), .WIDTH(8)) tx_buffer (
+    circular_buffer #(.DEPTH(TX_DEPTH), .WIDTH(8)) tx_buffer (
         .i_clk(i_clk),
         .i_rst_n(i_rst_n),
 
@@ -483,7 +483,7 @@ module uart #(
     //     .o_pulse(w_p_rx_data_valid_pulse)
     // );
 
-    cicular_buffer #(.DEPTH(RX_DEPTH), .WIDTH(8))
+    circular_buffer #(.DEPTH(RX_DEPTH), .WIDTH(8))
         rx_buffer   (
         .i_clk(i_clk),
         .i_rst_n(i_rst_n),
@@ -505,7 +505,7 @@ module uart #(
 endmodule: uart // universal asyncronous reciever and transmitter
 
 
-module cicular_buffer #(
+module circular_buffer #(
     parameter  DEPTH            = 8,
     parameter  WIDTH            = 8
 ) (
@@ -565,7 +565,7 @@ module cicular_buffer #(
             endcase
         end
     end
-endmodule: cicular_buffer
+endmodule: circular_buffer
 
 module p2s_shift_reg #(parameter WIDTH = 8) (
     input                   i_clk,
