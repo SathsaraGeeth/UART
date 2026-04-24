@@ -2,8 +2,7 @@
 
 This project implements a configurable, asynchronous UART (Universal Asynchronous Receiver Transmitter) in System Verilog. It supports 8N1 or 8N2 formats, and includes FIFO buffers for both RX (reciever) and TX (transmitter) paths.
 
-Designed for ASIC/FPGA SoC designs.
-
+Designed for ASIC/FPGA SoC applications, the design is functionally verified using a UVM based constrained random verification environment. The UVM verification environment is available in `verf/constrained_random`.
 ---
 
 ## Features
